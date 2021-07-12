@@ -3,7 +3,7 @@ style: Github
 template: CHANGELOG.tpl.md
 info:
   title: CHANGELOG
-  repository_url: https://github.com/prologic/rss2twtxt
+  repository_url: https://git.mills.io/prologic/rss2twtxt
 options:
   commits:
     filters:
