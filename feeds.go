@@ -22,7 +22,7 @@ import (
 const (
 	avatarResolution = 60 // 60x60 px
 	twtxtTemplate    = "%s\t%s ⌘ [Read more](%s)\n"
-	maxTwtLength     = 288
+	maxTwtLength     = 576
 	maxTweets        = 10
 )
 
@@ -45,7 +45,11 @@ func ProcessFeedContent(title, desc string, max int) string {
 		log.WithError(err).Warnf("error converting content to html")
 		return fmt.Sprintf("%s: %s", title, err)
 	}
-	return CleanTwt(fmt.Sprintf("**%s**\n%s", title, markdown))[:max]
+	markdown = CleanTwt(fmt.Sprintf("**%s**\n%s", title, markdown))
+	if len(markdown) > max {
+		return fmt.Sprintf("%s ...", markdown[:max])
+	}
+	return markdown
 }
 
 func TestTwitterFeed(handle string) error {
