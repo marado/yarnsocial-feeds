@@ -6,46 +6,41 @@ const indexTemplate = `
   <head>
     <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>rss2twtxt :: {{ .Title }}</title>
+    <title>twtxtfeeds :: {{ .Title }}</title>
   </head>
 <body>
   <nav class="container-fluid">
     <ul>
-      <li><strong><a href="/">rss2twtxt</a></strong></li>
+      <li><strong><a href="/">TwtxtFeeds</a></strong></li>
       <li><a href="/feeds">Feeds</a></li>
     </ul>
   </nav>
   <main class="container">
     <article class="grid">
       <div>
-        <hgroup>
-          <h2>rss2twtxt</h2>
-          <footer>RSS/Atom to twtxt feed</footer>
-        </hgroup>
+        <div class="container-fluid">
+          <form action="/" method="POST">
+			<input type="uri" id="uri" name="uri" placeholder="Enter any website URL, RSS feed URI or twitter://<handle>" required>
+            <div><button type="submit">Go!</button>
+          </form>
+        </div>
         <p>
-          rss2twtxt is a command-line tool and web app that processes RSS and Atom feeds
+          twtxtfeeds is a command-line tool and web app that processes RSS, Atom and Twitter feeds
           into <a href="https://twtxt.readthedocs.io/en/stable/index.html">twtxt</a>
           feeds for consumption by <i>twtxt</i> clients such as <a href="https://twtxt.net">twtxt.net</a>
-          and <a href="https://twt.social">Twt.social</a> pods.
+          and <a href="https://yarn.social">Yarn.social</a> pods.
         </p>
         <p>
-          You may freely create new feeds here by simply dropping a website's URL
-          into the form below and a valid RSS/Atom feed will be automagically
-          discovered and if valid added to the list of <a href="/feeds">/feeds</a>.
+          You may freely create new feeds here by simply dropping a website's URL,
+		  any valid RSS/Atom URL or a Twitter handle in the form of <code>twitter://<handle></code>.
         </p>
         <p>
           You are also welcome to subscribe to any of the <a href="/feeds">feeds</a>
           with your favorite <i>twtxt</i> client (<i>I like using
           <a href="https://github.com/quite/twet">twet</a></i>).
           Be sure to check out <a href="https://twtxt.net">twtxt.net</a>
-          and <a href="https://twt.social">Twt.social</a> pods.
+          and <a href="https://yarn.social">Yarn.social</a> pods.
         </p>
-        <div class="container-fluid">
-          <form action="/" method="POST">
-            <input type="url" id="url" name="url" placeholder="Enter any website URL here" required>
-            <div><button type="submit">Add</button>
-          </form>
-        </div>
       </div>
     </article>
   </main>
@@ -67,7 +62,7 @@ const feedsTemplate = `
   <head>
     <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>rss2twtxt :: {{ .Title }}</title>
+    <title>twtxtfeeds :: {{ .Title }}</title>
   </head>
 <body>
   <nav class="container-fluid">
@@ -86,7 +81,7 @@ const feedsTemplate = `
         {{ if .Feeds }}
           <ul>
             {{ range .Feeds }}
-              <li><a href="{{ .URL }}">{{ .Name }}</a>&nbsp;<small>({{ .LastModified }})</small></li>
+              <li><a href="{{ .URI }}">{{ .Name }}</a>&nbsp;<small>({{ .LastModified }})</small></li>
             {{ end }}
           </ul>
         {{ else }}

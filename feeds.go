@@ -1,23 +1,29 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/andyleap/microformats"
 	"github.com/gosimple/slug"
 	"github.com/mmcdole/gofeed"
+	twitterscraper "github.com/n0madic/twitter-scraper"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
 	avatarResolution = 60 // 60x60 px
-	rssTwtxtTemplate = "%s\t%s ⌘ [Read more...](%s)\n"
+	twtxtTemplate    = "%s\t%s ⌘ [Read more](%s)\n"
+	maxTwtLength     = 288
+	maxTweets        = 10
 )
 
 var (
@@ -27,14 +33,44 @@ var (
 // Feed ...
 type Feed struct {
 	Name string
-	URL  string
+	URI  string
 
 	LastModified string
 }
 
-func TestFeed(url string) (*gofeed.Feed, error) {
+func ProcessFeedContent(title, desc string, max int) string {
+	converter := md.NewConverter("", true, nil)
+	markdown, err := converter.ConvertString(desc)
+	if err != nil {
+		log.WithError(err).Warnf("error converting content to html")
+		return fmt.Sprintf("%s: %s", title, err)
+	}
+	return CleanTwt(fmt.Sprintf("**%s**\n%s", title, markdown))[:max]
+}
+
+func TestTwitterFeed(handle string) error {
+	count := 0
+	for tweet := range twitterscraper.WithReplies(false).GetTweets(context.Background(), handle, maxTweets) {
+		if tweet.Error != nil {
+			return fmt.Errorf("error scraping tweets from %s: %w", handle, tweet.Error)
+		}
+
+		if tweet.IsRetweet {
+			continue
+		}
+		count++
+	}
+
+	if count == 0 {
+		log.WithField("handle", handle).WithField("handle", handle).Warn("empty or bad twitter handle")
+	}
+
+	return nil
+}
+
+func TestRSSFeed(uri string) (*gofeed.Feed, error) {
 	fp := gofeed.NewParser()
-	feed, err := fp.ParseURL(url)
+	feed, err := fp.ParseURL(uri)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +78,7 @@ func TestFeed(url string) (*gofeed.Feed, error) {
 	return feed, nil
 }
 
-func FindFeed(uri string) (*gofeed.Feed, string, error) {
+func FindRSSFeed(uri string) (*gofeed.Feed, string, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, "", err
@@ -62,41 +98,54 @@ func FindFeed(uri string) (*gofeed.Feed, string, error) {
 		altMap[alt.Type] = alt.URL
 	}
 
-	feedURL := altMap["application/atom+xml"]
+	feedURI := altMap["application/atom+xml"]
 
-	if feedURL == "" {
+	if feedURI == "" {
 		for _, alt := range data.Alternates {
 			switch alt.Type {
 			case "application/atom+xml", "application/rss+xml":
-				feedURL = alt.URL
+				feedURI = alt.URL
 				break
 			}
 		}
 	}
 
-	if feedURL == "" {
+	if feedURI == "" {
 		return nil, "", ErrNoSuitableFeedsFound
 	}
 
-	feed, err := TestFeed(feedURL)
+	feed, err := TestRSSFeed(feedURI)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return feed, feedURL, nil
+	return feed, feedURI, nil
+}
+
+// ValidateTwitterFeed ...
+func ValidateTwitterFeed(conf *Config, handle string) (Feed, error) {
+	err := TestTwitterFeed(handle)
+	if err != nil {
+		log.WithError(err).Warnf("invalid twitter feed %s", handle)
+	}
+
+	name := fmt.Sprintf("twitter-%s", handle)
+	uri := fmt.Sprintf("twitter://%s", handle)
+
+	return Feed{Name: name, URI: uri}, nil
 }
 
 // ValidateFeed ...
-func ValidateFeed(conf *Config, url string) (Feed, error) {
-	feed, err := TestFeed(url)
+func ValidateRSSFeed(conf *Config, uri string) (Feed, error) {
+	feed, err := TestRSSFeed(uri)
 	if err != nil {
-		log.WithError(err).Warnf("invalid feed %s", url)
+		log.WithError(err).Warnf("invalid rss feed %s", uri)
 	}
 
 	if feed == nil {
-		feed, url, err = FindFeed(url)
+		feed, uri, err = FindRSSFeed(uri)
 		if err != nil {
-			log.WithError(err).Errorf("no feed found on %s", url)
+			log.WithError(err).Errorf("no rss feeds found on %s", uri)
 			return Feed{}, err
 		}
 	}
@@ -117,10 +166,77 @@ func ValidateFeed(conf *Config, url string) (Feed, error) {
 		}
 	}
 
-	return Feed{Name: name, URL: url}, nil
+	return Feed{Name: name, URI: uri}, nil
 }
 
-func UpdateFeed(conf *Config, name, url string) error {
+// Code borrowed from https://github.com/n0madic/twitter2rss
+// With permission from the author: https://github.com/n0madic/twitter2rss/issues/3
+func UpdateTwitterFeed(conf *Config, name, handle string) error {
+	var lastModified = time.Time{}
+
+	fn := filepath.Join(conf.Root, fmt.Sprintf("%s.txt", name))
+
+	stat, err := os.Stat(fn)
+	if err == nil {
+		lastModified = stat.ModTime()
+	}
+
+	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	old, new := 0, 0
+	for tweet := range twitterscraper.WithReplies(false).GetTweets(context.Background(), handle, maxTweets) {
+		if tweet.Error != nil {
+			return fmt.Errorf("error scraping tweets from %s: %w", handle, tweet.Error)
+		}
+
+		if tweet.IsRetweet {
+			continue
+		}
+
+		if tweet.TimeParsed.After(lastModified) {
+			var title string
+
+			titleSplit := strings.FieldsFunc(tweet.Text, func(r rune) bool {
+				return r == '\n' || r == '!' || r == '?' || r == ':' || r == '<' || r == '.' || r == ','
+			})
+			if len(titleSplit) > 0 {
+				if strings.HasPrefix(titleSplit[0], "a href") || strings.HasPrefix(titleSplit[0], "http") {
+					title = "link"
+				} else {
+					title = titleSplit[0]
+				}
+			}
+			title = strings.TrimSuffix(title, "https")
+			title = strings.TrimSpace(title)
+
+			text := fmt.Sprintf(
+				twtxtTemplate,
+				tweet.TimeParsed.Format(time.RFC3339),
+				ProcessFeedContent(title, tweet.HTML, maxTwtLength-len(tweet.PermanentURL)),
+				tweet.PermanentURL,
+			)
+			_, err := f.WriteString(text)
+			if err != nil {
+				return err
+			}
+
+		} else {
+			old++
+		}
+	}
+
+	if (old + new) == 0 {
+		log.WithField("name", name).WithField("handle", handle).Warn("empty or bad twitter handle")
+	}
+
+	return nil
+}
+
+func UpdateRSSFeed(conf *Config, name, url string) error {
 	fp := gofeed.NewParser()
 	feed, err := fp.ParseURL(url)
 	if err != nil {
@@ -166,9 +282,9 @@ func UpdateFeed(conf *Config, name, url string) error {
 		if item.PublishedParsed.After(lastModified) {
 			new++
 			text := fmt.Sprintf(
-				rssTwtxtTemplate,
+				twtxtTemplate,
 				item.PublishedParsed.Format(time.RFC3339),
-				item.Title,
+				ProcessFeedContent(item.Title, item.Description, maxTwtLength-len(item.Link)),
 				item.Link,
 			)
 			_, err := f.WriteString(text)

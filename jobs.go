@@ -90,9 +90,23 @@ func NewUpdateFeedsJob(conf *Config) cron.Job {
 
 func (job *UpdateFeedsJob) Run() {
 	conf := job.conf
-	for name, url := range conf.Feeds {
-		if err := UpdateFeed(conf, name, url); err != nil {
-			log.WithError(err).Errorf("error updating feed %s: %s", name, url)
+	for name, uri := range conf.Feeds {
+		u, err := ParseURI(uri)
+		if err != nil {
+			log.WithError(err).Errorf("error parsing feed %s: %s", name, uri)
+		} else {
+			switch u.Type {
+			case "rss", "http", "https":
+				if err := UpdateRSSFeed(conf, name, uri); err != nil {
+					log.WithError(err).Errorf("error updating rss feed %s: %s", name, uri)
+				}
+			case "twitter":
+				if err := UpdateTwitterFeed(conf, name, u.Config); err != nil {
+					log.WithError(err).Errorf("error updating twitter feed %s: %s", name, uri)
+				}
+			default:
+				log.Warnf("error unknown feed type %s: %s", name, uri)
+			}
 		}
 	}
 }

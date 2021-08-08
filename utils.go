@@ -31,6 +31,15 @@ var (
 	ErrInvalidImage = errors.New("error: invalid image")
 )
 
+// CleanTwt cleans a twt's text, replacing new lines with spaces and
+// stripping surrounding spaces.
+func CleanTwt(text string) string {
+	text = strings.TrimSpace(text)
+	text = strings.ReplaceAll(text, "\r\n", "\n")
+	text = strings.ReplaceAll(text, "\n", "\u2028")
+	return text
+}
+
 func RotateFile(fn string) error {
 	now := time.Now().Unix()
 	return os.Rename(fn, fmt.Sprintf("%s.%d", fn, now))

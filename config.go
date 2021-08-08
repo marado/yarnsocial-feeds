@@ -24,6 +24,7 @@ func (conf *Config) Save() error {
 	if err != nil {
 		return err
 	}
+	data = append([]byte("---\n"), data...)
 	return ioutil.WriteFile(conf.path, data, 0644)
 }
 

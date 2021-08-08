@@ -56,10 +56,26 @@ func main() {
 		os.Exit(0)
 	}
 
-	url := flag.Arg(0)
+	uri := flag.Arg(0)
 	name := flag.Arg(1)
 
-	if err := UpdateFeed(&Config{Root: "."}, name, url); err != nil {
-		log.WithError(err).Fatal("error updating feed")
+	conf := &Config{Root: "."}
+
+	u, err := ParseURI(uri)
+	if err != nil {
+		log.WithError(err).Errorf("error parsing feed %s: %s", name, uri)
+	} else {
+		switch u.Type {
+		case "rss", "http", "https":
+			if err := UpdateRSSFeed(conf, name, uri); err != nil {
+				log.WithError(err).Errorf("error updating rss feed %s: %s", name, uri)
+			}
+		case "twitter":
+			if err := UpdateTwitterFeed(conf, name, u.Config); err != nil {
+				log.WithError(err).Errorf("error updating twitter feed %s: %s", name, uri)
+			}
+		default:
+			log.Warnf("error unknown feed type %s: %s", name, uri)
+		}
 	}
 }
