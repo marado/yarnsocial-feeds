@@ -13,8 +13,8 @@ build:
 	@go build \
 		-tags "netgo static_build" -installsuffix netgo \
 		-ldflags "-w \
-		-X $(shell go list).Version=$(VERSION) \
-		-X $(shell go list).Commit=$(COMMIT)" \
+		-X main.Version=$(VERSION) \
+		-X main.Commit=$(COMMIT)" \
 		.
 
 install: build

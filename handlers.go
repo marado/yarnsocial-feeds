@@ -43,6 +43,11 @@ func renderMessage(w http.ResponseWriter, status int, title, message string) err
 	return nil
 }
 
+func (app *App) HealthHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	return
+}
+
 func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodHead || r.Method == http.MethodGet {
 		w.Header().Set("Content-Type", "text/html")

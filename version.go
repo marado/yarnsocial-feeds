@@ -8,14 +8,11 @@ var (
 	// Version release version
 	Version = "0.0.1"
 
-	// Build will be overwritten automatically by the build system
-	Build = "dev"
-
-	// GitCommit will be overwritten automatically by the build system
-	GitCommit = "HEAD"
+	// Commit will be overwritten automatically by the build system
+	Commit = "HEAD"
 )
 
 // FullVersion returns the full version, build and commit hash
 func FullVersion() string {
-	return fmt.Sprintf("%s-%s@%s", Version, Build, GitCommit)
+	return fmt.Sprintf("%s@%s", Version, Commit)
 }
