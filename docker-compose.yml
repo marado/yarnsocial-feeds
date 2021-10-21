@@ -1,0 +1,14 @@
+---
+version: "3.8"
+
+services:
+  feeds:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: -s -c /config/config.yaml
+    ports:
+      - "8000:8000/tcp"
+    volumes:
+      - ./config.yaml.sample:/config/config.yaml
+      - ./feeds:/feeds
