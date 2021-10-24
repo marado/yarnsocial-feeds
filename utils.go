@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -24,10 +23,6 @@ import (
 )
 
 var (
-	validName = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_\- ]*$`)
-
-	ErrInvalidName  = errors.New("error: invalid feed name")
-	ErrNameTooLong  = errors.New("error: name is too long")
 	ErrInvalidImage = errors.New("error: invalid image")
 )
 
@@ -134,7 +129,7 @@ func DownloadImage(conf *Config, url string, filename string, opts *ImageOptions
 		}
 	}
 
-	fn := filepath.Join(conf.Root, filename)
+	fn := filepath.Join(conf.DataDir, filename)
 
 	of, err := os.OpenFile(fn, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {

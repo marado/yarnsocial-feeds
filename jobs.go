@@ -52,7 +52,7 @@ func NewRotateFeedsJob(conf *Config) cron.Job {
 func (job *RotateFeedsJob) Run() {
 	conf := job.conf
 
-	files, err := WalkMatch(conf.Root, "*.txt")
+	files, err := WalkMatch(conf.DataDir, "*.txt")
 	if err != nil {
 		log.WithError(err).Error("error reading feeds directory")
 		return
@@ -65,12 +65,12 @@ func (job *RotateFeedsJob) Run() {
 			continue
 		}
 
-		if stat.Size() > conf.MaxSize {
+		if stat.Size() > conf.MaxFeedSize {
 			log.Infof(
 				"rotating %s with size %s > %s",
 				BaseWithoutExt(file),
 				humanize.Bytes(uint64(stat.Size())),
-				humanize.Bytes(uint64(conf.MaxSize)),
+				humanize.Bytes(uint64(conf.MaxFeedSize)),
 			)
 
 			if err := RotateFile(file); err != nil {
@@ -90,22 +90,22 @@ func NewUpdateFeedsJob(conf *Config) cron.Job {
 
 func (job *UpdateFeedsJob) Run() {
 	conf := job.conf
-	for name, uri := range conf.Feeds {
-		u, err := ParseURI(uri)
+	for name, feed := range conf.Feeds {
+		u, err := ParseURI(feed.URI)
 		if err != nil {
-			log.WithError(err).Errorf("error parsing feed %s: %s", name, uri)
+			log.WithError(err).Errorf("error parsing feed %s: %s", name, feed.URI)
 		} else {
 			switch u.Type {
 			case "rss", "http", "https":
-				if err := UpdateRSSFeed(conf, name, uri); err != nil {
-					log.WithError(err).Errorf("error updating rss feed %s: %s", name, uri)
+				if err := UpdateRSSFeed(conf, name, feed.URI); err != nil {
+					log.WithError(err).Errorf("error updating rss feed %s: %s", name, feed.URI)
 				}
 			case "twitter":
 				if err := UpdateTwitterFeed(conf, name, u.Config); err != nil {
-					log.WithError(err).Errorf("error updating twitter feed %s: %s", name, uri)
+					log.WithError(err).Errorf("error updating twitter feed %s: %s", name, feed.URI)
 				}
 			default:
-				log.Warnf("error unknown feed type %s: %s", name, uri)
+				log.Warnf("error unknown feed type %s: %s", name, feed.URI)
 			}
 		}
 	}
@@ -138,6 +138,14 @@ func NewTikTokJob(conf *Config) cron.Job {
 	name := "tiktok"
 	url := fmt.Sprintf("@<%s %s>", name, URLForFeed(conf, name))
 
+	conf.Feeds[name] = &Feed{
+		Name: name,
+		Description: fmt.Sprintf(
+			"I am @%s an automated feed that twts every 30m with the current time (UTC)",
+			name,
+		),
+	}
+
 	return &TikTokJob{
 		conf:    conf,
 		name:    name,
@@ -149,7 +157,7 @@ func NewTikTokJob(conf *Config) cron.Job {
 func (job *TikTokJob) Run() {
 	conf := job.conf
 
-	fn := filepath.Join(conf.Root, fmt.Sprintf("%s.txt", job.name))
+	fn := filepath.Join(conf.DataDir, fmt.Sprintf("%s.txt", job.name))
 
 	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
@@ -157,18 +165,6 @@ func (job *TikTokJob) Run() {
 		return
 	}
 	defer f.Close()
-
-	err = AppendTwt(f,
-		fmt.Sprintf(`
-I am %s an automated feed that twts every 30m with the current time (UTC)
-`, job.url,
-		),
-		time.Unix(0, 0),
-	)
-	if err != nil {
-		log.WithError(err).Error("error writing @tiktok feed")
-		return
-	}
 
 	now := time.Now().UTC()
 

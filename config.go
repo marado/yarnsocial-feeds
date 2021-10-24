@@ -1,47 +1,78 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/go-yaml/yaml"
+	log "github.com/sirupsen/logrus"
 )
 
 type Config struct {
-	Root    string
-	BaseURL string
-	MaxSize int64             // maximum feed size before rotating
-	Feeds   map[string]string // name -> url
+	Addr  string
+	Debug bool
 
-	path string // path to config file that was loaded used by .Save()
+	DataDir     string
+	BaseURL     string
+	FeedsFile   string
+	MaxFeedSize int64 // maximum feed size before rotating
+
+	Feeds map[string]*Feed // name -> url
 }
 
-func (conf *Config) Parse(data []byte) error {
-	return yaml.Unmarshal(data, conf)
-}
-
-func (conf *Config) Save() error {
-	data, err := yaml.Marshal(conf)
+func (conf *Config) LoadFeeds() error {
+	f, err := os.Open(conf.FeedsFile)
 	if err != nil {
-		return err
+		log.WithError(err).Errorf("error opening feeds file %s", conf.FeedsFile)
+		return fmt.Errorf("error opening feeds file %s: %w", conf.FeedsFile, err)
 	}
+	defer f.Close()
+
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		log.WithError(err).Errorf("error reading feeds file %s", conf.FeedsFile)
+		return fmt.Errorf("error reading feeds file %s: %w", conf.FeedsFile, err)
+	}
+
+	if err := yaml.Unmarshal(data, conf.Feeds); err != nil {
+		log.WithError(err).Errorf("error parsing feeds file %s", conf.FeedsFile)
+		return fmt.Errorf("error parsing feeds file %s: %w", conf.FeedsFile, err)
+	}
+
+	for _, feed := range conf.Feeds {
+		fn := filepath.Join(conf.DataDir, fmt.Sprintf("%s.png", feed.Name))
+		log.Debugf("Exists(fn): %t", Exists(fn))
+		log.Debugf("feed.Avatar: %q", feed.Avatar)
+		if Exists(fn) && feed.Avatar == "" {
+			feed.Avatar = fmt.Sprintf("%s/%s/avatar.png", conf.BaseURL, feed.Name)
+		}
+	}
+
+	return nil
+}
+
+func (conf *Config) SaveFeeds() error {
+	f, err := os.OpenFile(conf.FeedsFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		log.WithError(err).Errorf("error opening feeds file %s", conf.FeedsFile)
+		return fmt.Errorf("error opening feeds file %s: %w", conf.FeedsFile, err)
+	}
+	defer f.Close()
+
+	data, err := yaml.Marshal(conf.Feeds)
+	if err != nil {
+		log.WithError(err).Errorf("error serializing feeds")
+		return fmt.Errorf("error serializing feeds: %w", err)
+	}
+
 	data = append([]byte("---\n"), data...)
-	return ioutil.WriteFile(conf.path, data, 0644)
-}
 
-func LoadConfig(filename string) (*Config, error) {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	conf := &Config{}
-	if err := conf.Parse(data); err != nil {
-		return nil, err
-	}
-	conf.path = filename
-
-	if conf.Feeds == nil {
-		conf.Feeds = make(map[string]string)
+	if _, err := f.Write(data); err != nil {
+		log.WithError(err).Errorf("error writing feeds file %s", conf.FeedsFile)
+		return fmt.Errorf("error writing feeds file %s: %w", conf.FeedsFile, err)
 	}
 
-	return conf, nil
+	return nil
 }

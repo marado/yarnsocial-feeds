@@ -35,6 +35,9 @@ type Feed struct {
 	Name string
 	URI  string
 
+	Avatar      string
+	Description string
+
 	LastModified string
 }
 
@@ -82,6 +85,16 @@ func TestRSSFeed(uri string) (*gofeed.Feed, error) {
 	return feed, nil
 }
 
+func FindRSSOrAtomAlternate(alts []*microformats.AlternateRel) string {
+	for _, alt := range alts {
+		switch alt.Type {
+		case "application/atom+xml", "application/rss+xml":
+			return alt.URL
+		}
+	}
+	return ""
+}
+
 func FindRSSFeed(uri string) (*gofeed.Feed, string, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
@@ -105,13 +118,7 @@ func FindRSSFeed(uri string) (*gofeed.Feed, string, error) {
 	feedURI := altMap["application/atom+xml"]
 
 	if feedURI == "" {
-		for _, alt := range data.Alternates {
-			switch alt.Type {
-			case "application/atom+xml", "application/rss+xml":
-				feedURI = alt.URL
-				break
-			}
-		}
+		feedURI = FindRSSOrAtomAlternate(data.Alternates)
 	}
 
 	if feedURI == "" {
@@ -178,7 +185,7 @@ func ValidateRSSFeed(conf *Config, uri string) (Feed, error) {
 func UpdateTwitterFeed(conf *Config, name, handle string) error {
 	var lastModified = time.Time{}
 
-	fn := filepath.Join(conf.Root, fmt.Sprintf("%s.txt", name))
+	fn := filepath.Join(conf.DataDir, fmt.Sprintf("%s.txt", name))
 
 	stat, err := os.Stat(fn)
 	if err == nil {
@@ -247,7 +254,7 @@ func UpdateRSSFeed(conf *Config, name, url string) error {
 		return err
 	}
 
-	avatarFile := filepath.Join(conf.Root, fmt.Sprintf("%s.png", name))
+	avatarFile := filepath.Join(conf.DataDir, fmt.Sprintf("%s.png", name))
 	if feed.Image != nil && feed.Image.URL != "" && !Exists(avatarFile) {
 		opts := &ImageOptions{
 			Resize:  true,
@@ -264,7 +271,7 @@ func UpdateRSSFeed(conf *Config, name, url string) error {
 
 	var lastModified = time.Time{}
 
-	fn := filepath.Join(conf.Root, fmt.Sprintf("%s.txt", name))
+	fn := filepath.Join(conf.DataDir, fmt.Sprintf("%s.txt", name))
 
 	stat, err := os.Stat(fn)
 	if err == nil {

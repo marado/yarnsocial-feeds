@@ -3,6 +3,6 @@
 *.txt
 .DS_Store
 
-/feeds
+/data
 /rss2twtxt
-/config.yaml
+/feeds.yaml

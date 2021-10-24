@@ -14,25 +14,27 @@ import (
 )
 
 type App struct {
-	bind   string
-	conf   *Config
-	cron   *cron.Cron
-	router *mux.Router
+	conf *Config
+	cron *cron.Cron
 }
 
-func NewApp(bind, config string) (*App, error) {
-	conf, err := LoadConfig(config)
-	if err != nil {
-		return nil, err
+func NewApp(options ...Option) (*App, error) {
+	conf := NewConfig()
+
+	for _, opt := range options {
+		if err := opt(conf); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := conf.LoadFeeds(); err != nil {
+		log.WithError(err).Error("error loading feeds")
+		return nil, fmt.Errorf("error loading feeds: %w", err)
 	}
 
 	cron := cron.New()
 
-	return &App{
-		bind: bind,
-		conf: conf,
-		cron: cron,
-	}, nil
+	return &App{conf: conf, cron: cron}, nil
 }
 
 func (app *App) initRoutes() *mux.Router {
@@ -76,7 +78,7 @@ func (app *App) runStartupJobs() {
 }
 
 func (app *App) GetFeeds() (feeds []Feed) {
-	files, err := WalkMatch(app.conf.Root, "*.txt")
+	files, err := WalkMatch(app.conf.DataDir, "*.txt")
 	if err != nil {
 		log.WithError(err).Error("error reading feeds directory")
 		return nil
@@ -92,8 +94,8 @@ func (app *App) GetFeeds() (feeds []Feed) {
 		}
 		lastModified := humanize.Time(stat.ModTime())
 
-		url := fmt.Sprintf("%s/%s/twtxt.txt", app.conf.BaseURL, name)
-		feeds = append(feeds, Feed{name, url, lastModified})
+		uri := fmt.Sprintf("%s/%s/twtxt.txt", app.conf.BaseURL, name)
+		feeds = append(feeds, Feed{Name: name, URI: uri, LastModified: lastModified})
 	}
 
 	sort.Slice(feeds, func(i, j int) bool { return feeds[i].Name < feeds[j].Name })
@@ -111,9 +113,9 @@ func (app *App) Run() error {
 	app.cron.Start()
 	log.Info("started background jobs")
 
-	log.Infof("rss2twtxt %s listening on http://%s", FullVersion(), app.bind)
+	log.Infof("feeds %s listening on http://%s", FullVersion(), app.conf.Addr)
 
 	go app.runStartupJobs()
 
-	return http.ListenAndServe(app.bind, router)
+	return http.ListenAndServe(app.conf.Addr, router)
 }

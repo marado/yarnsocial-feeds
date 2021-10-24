@@ -45,7 +45,7 @@ func renderMessage(w http.ResponseWriter, status int, title, message string) err
 
 func (app *App) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	return
+	http.Error(w, "Healthy", http.StatusOK)
 }
 
 func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -118,8 +118,8 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		app.conf.Feeds[feed.Name] = feed.URI
-		if err := app.conf.Save(); err != nil {
+		app.conf.Feeds[feed.Name] = &feed
+		if err := app.conf.SaveFeeds(); err != nil {
 			msg := fmt.Sprintf("Could not save feed: %s", err)
 			if err := renderMessage(w, http.StatusInternalServerError, "Error", msg); err != nil {
 				log.WithError(err).Error("error rendering message template")
@@ -150,14 +150,21 @@ func (app *App) FeedHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		filename := filepath.Join(app.conf.Root, fmt.Sprintf("%s.txt", name))
-		if !Exists(filename) {
+		fn := filepath.Join(app.conf.DataDir, fmt.Sprintf("%s.txt", name))
+		if !Exists(fn) {
 			log.Warnf("feed does not exist %s", name)
 			http.Error(w, "Feed not found", http.StatusNotFound)
 			return
 		}
 
-		fileInfo, err := os.Stat(filename)
+		feed, ok := app.conf.Feeds[name]
+		if !ok {
+			log.Warnf("feed does not exist %s", name)
+			http.Error(w, "Feed not found", http.StatusNotFound)
+			return
+		}
+
+		fileInfo, err := os.Stat(fn)
 		if err != nil {
 			log.WithError(err).Error("os.Stat() error")
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -165,12 +172,47 @@ func (app *App) FeedHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
+		w.Header().Set("Last-Modified", fileInfo.ModTime().Format(http.TimeFormat))
 
 		if r.Method == http.MethodHead {
 			return
 		}
 
-		http.ServeFile(w, r, filename)
+		ctx := map[string]string{
+			"Name":         feed.Name,
+			"URL":          fmt.Sprintf("%s/%s/twtxt.txt", app.conf.BaseURL, feed.Name),
+			"Source":       feed.URI,
+			"Avatar":       feed.Avatar,
+			"Description":  feed.Description,
+			"LastModified": fileInfo.ModTime().UTC().Format(time.RFC3339),
+		}
+
+		preamble, err := RenderPlainText(preambleTemplate, ctx)
+		if err != nil {
+			log.WithError(err).Warn("error rendering twtxt preamble")
+		}
+
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", int64(len(preamble))+fileInfo.Size()))
+		w.Header().Set("Last-Modified", fileInfo.ModTime().UTC().Format(http.TimeFormat))
+
+		if r.Method == http.MethodHead {
+			return
+		}
+
+		if _, err = w.Write([]byte(preamble)); err != nil {
+			log.WithError(err).Warn("error writing twtxt preamble")
+		}
+
+		f, err := os.Open(fn)
+		if err != nil {
+			log.WithError(err).Error("error opening feed")
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+
+		_, _ = io.Copy(w, f)
 		return
 	}
 	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -189,14 +231,14 @@ func (app *App) AvatarHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		filename := filepath.Join(app.conf.Root, fmt.Sprintf("%s.txt", name))
-		if !Exists(filename) {
+		fn := filepath.Join(app.conf.DataDir, fmt.Sprintf("%s.txt", name))
+		if !Exists(fn) {
 			log.Warnf("feed does not exist %s", name)
 			http.Error(w, "Feed not found", http.StatusNotFound)
 			return
 		}
 
-		fn := filepath.Join(app.conf.Root, fmt.Sprintf("%s.png", name))
+		fn = filepath.Join(app.conf.DataDir, fmt.Sprintf("%s.png", name))
 		if fileInfo, err := os.Stat(fn); err == nil {
 			etag := fmt.Sprintf("W/\"%s-%s\"", r.RequestURI, fileInfo.ModTime().Format(time.RFC3339))
 

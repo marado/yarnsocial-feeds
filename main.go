@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
@@ -12,9 +13,11 @@ var (
 	version bool
 	debug   bool
 
-	server bool
-	bind   string
-	config string
+	bind      string
+	server    bool
+	baseURL   string
+	dataDir   string
+	feedsFile string
 )
 
 func init() {
@@ -24,15 +27,44 @@ func init() {
 	}
 
 	flag.BoolVarP(&version, "version", "v", false, "display version information")
-	flag.BoolVarP(&debug, "debug", "d", false, "enable debug logging")
+	flag.BoolVarP(&debug, "debug", "D", false, "enable debug logging")
 
-	flag.BoolVarP(&server, "server", "s", false, "enable server mode")
 	flag.StringVarP(&bind, "bind", "b", "0.0.0.0:8000", "interface and port to bind to in server mode")
-	flag.StringVarP(&config, "config", "c", "config.yaml", "configuration file for server mode")
+	flag.BoolVarP(&server, "server", "s", false, "enable server mode")
+	flag.StringVarP(&dataDir, "data-dir", "d", "./data", "data directory to store feeds in")
+	flag.StringVarP(&baseURL, "base-url", "u", "http://0.0.0.0:8000", "base url for generated urls")
+	flag.StringVarP(&feedsFile, "feeds-file", "f", "feeds.yaml", "feeds configuration file in server mode")
+}
+
+func flagNameFromEnvironmentName(s string) string {
+	s = strings.ToLower(s)
+	s = strings.Replace(s, "_", "-", -1)
+	return s
+}
+
+func parseArgs() error {
+	for _, v := range os.Environ() {
+		vals := strings.SplitN(v, "=", 2)
+		flagName := flagNameFromEnvironmentName(vals[0])
+		fn := flag.CommandLine.Lookup(flagName)
+		if fn == nil || fn.Changed {
+			continue
+		}
+		if err := fn.Value.Set(vals[1]); err != nil {
+			return err
+		}
+	}
+	flag.Parse()
+	return nil
 }
 
 func main() {
-	flag.Parse()
+	parseArgs()
+
+	if version {
+		fmt.Printf("feeds %s\n", FullVersion())
+		os.Exit(0)
+	}
 
 	if debug {
 		log.SetLevel(log.DebugLevel)
@@ -40,13 +72,13 @@ func main() {
 		log.SetLevel(log.InfoLevel)
 	}
 
-	if version {
-		fmt.Printf("rss2twtxt %s\n", FullVersion())
-		os.Exit(0)
-	}
-
 	if server {
-		app, err := NewApp(bind, config)
+		app, err := NewApp(
+			WithBind(bind),
+			WithDataDir(dataDir),
+			WithBaseURL(baseURL),
+			WithFeedsFile(feedsFile),
+		)
 		if err != nil {
 			log.WithError(err).Fatal("error creating app for server mode")
 		}
@@ -59,7 +91,7 @@ func main() {
 	uri := flag.Arg(0)
 	name := flag.Arg(1)
 
-	conf := &Config{Root: "."}
+	conf := &Config{DataDir: "."}
 
 	u, err := ParseURI(uri)
 	if err != nil {

@@ -1,5 +1,37 @@
 package main
 
+import (
+	"bytes"
+	text_template "text/template"
+)
+
+// RenderPlainText ...
+func RenderPlainText(tpl string, ctx interface{}) (string, error) {
+	t := text_template.Must(text_template.New("tpl").Parse(tpl))
+	buf := bytes.NewBuffer([]byte{})
+	err := t.Execute(buf, ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+const preambleTemplate = `# Twtxt is an open, distributed microblogging platform that
+# uses human-readable text files, common transport protocols,
+# and free software.
+#
+# Learn more about twtxt at  https://github.com/buckket/twtxt
+#
+# nick        = {{ .Name }}
+# url         = {{ .URL }}
+# source      = {{ .Source }}
+# avatar      = {{ .Avatar }}
+# description = {{ .Description }}
+# updated_at  = {{ .LastModified }}
+#
+`
+
 const indexTemplate = `
 <!DOCTYPE html>
 <html lang="en">
