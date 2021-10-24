@@ -1,12 +1,6 @@
-# rss2twtxt
+# feeds
 
-[![Build Status](https://cloud.drone.io/api/badges/prologic/rss2twtxt/status.svg)](https://cloud.drone.io/prologic/rss2twtxt)
-[![CodeCov](https://codecov.io/gh/prologic/rss2twtxt/branch/master/graph/badge.svg)](https://codecov.io/gh/prologic/rss2twtxt)
-[![Go Report Card](https://goreportcard.com/badge/prologic/rss2twtxt)](https://goreportcard.com/report/prologic/rss2twtxt)
-[![GoDoc](https://godoc.org/git.mills.io/prologic/rss2twtxt?status.svg)](https://godoc.org/git.mills.io/prologic/rss2twtxt) 
-[![Sourcegraph](https://sourcegraph.com/git.mills.io/prologic/rss2twtxt/-/badge.svg)](https://sourcegraph.com/git.mills.io/prologic/rss2twtxt?badge)
-
-`rss2twtxt` is an RSS/Atom feed aggregator for [twtxt](https://rss2twtxt.readthedocs.io/en/latest/)
+`feeds` is an RSS/Atom and Twitter feed aggregator for [twtxt](https://twtxt.readthedocs.io/en/latest/)
 that consumes RSS/Atom feeds and processes them into twtxt feeds. These can
 then be consumed by any standard twtxt client such as:
 
@@ -27,15 +21,15 @@ There is also a publically (_free_) service online available at:
 ### Source
 
 ```#!bash
-$ go get -u git.mills.io/prologic/rss2twtxt
+$ go get -u git.mills.io/yarnsocial/feeds
 ```
 
 ## Usage
 
-Run `rss2twtxt`:
+Run `feeds`:
 
 ```#!bash
-$ rss2twtxt
+$ feeds
 ```
 
 Then visit: http://localhost:8000/
@@ -46,4 +40,4 @@ Then visit: http://localhost:8000/
 
 ## License
 
-`rss2twtxt` is licensed under the terms of the [MIT License](/LICENSE)
+`feeds` is licensed under the terms of the [MIT License](/LICENSE)

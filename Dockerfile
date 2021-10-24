@@ -37,13 +37,13 @@ FROM alpine:latest
 RUN apk --no-cache -U add curl ca-certificates tzdata
 
 WORKDIR /
-VOLUME /feeds
+VOLUME /data
 
 # force cgo resolver
 ENV GODEBUG=netdns=cgo
 
-COPY --from=build /src/rss2twtxt /rss2twtxt
+COPY --from=build /src/feeds /feeds
 
 HEALTHCHECK CMD curl -qsfSL http://127.0.0.1:8000/health || exit 1
-ENTRYPOINT ["/rss2twtxt"]
+ENTRYPOINT ["/feeds"]
 CMD [""]

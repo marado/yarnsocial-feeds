@@ -7,7 +7,7 @@ COMMIT=$(shell git rev-parse --short HEAD)
 all: dev
 
 dev: build
-	@./rss2twtxt -v
+	@./feeds -v
 
 build:
 	@go build \
@@ -24,9 +24,9 @@ image:
 	@docker build \
 		--build-arg VERSION="$(VERSION)" \
 		--build-arg COMMIT="$(COMMIT)"  \
-	    -t r.mills.io/prologic/rss2twtxt \
+	    -t r.mills.io/prologic/feeds \
 		.
-	@docker push r.mills.io/prologic/rss2twtxt
+	@docker push r.mills.io/prologic/feeds
 
 test: install
 	@go test

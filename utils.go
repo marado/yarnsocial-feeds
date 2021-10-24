@@ -84,7 +84,7 @@ func DownloadImage(conf *Config, url string, filename string, opts *ImageOptions
 	}
 	defer res.Body.Close()
 
-	tf, err := ioutil.TempFile("", "rss2twtxt-*")
+	tf, err := ioutil.TempFile("", "feeds-*")
 	if err != nil {
 		log.WithError(err).Error("error creating temporary file")
 		return err

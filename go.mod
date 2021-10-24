@@ -1,4 +1,4 @@
-module git.mills.io/prologic/rss2twtxt
+module git.mills.io/prologic/feeds
 
 go 1.14
 
