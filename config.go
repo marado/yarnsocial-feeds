@@ -43,10 +43,13 @@ func (conf *Config) LoadFeeds() error {
 
 	for _, feed := range conf.Feeds {
 		fn := filepath.Join(conf.DataDir, fmt.Sprintf("%s.png", feed.Name))
-		log.Debugf("Exists(fn): %t", Exists(fn))
-		log.Debugf("feed.Avatar: %q", feed.Avatar)
 		if Exists(fn) && feed.Avatar == "" {
 			feed.Avatar = fmt.Sprintf("%s/%s/avatar.png", conf.BaseURL, feed.Name)
+			if avatarHash, err := FastHashFile(fn); err == nil {
+				feed.Avatar += "#" + avatarHash
+			} else {
+				log.WithError(err).Warnf("error updating avatar hash for %s", feed.Name)
+			}
 		}
 	}
 

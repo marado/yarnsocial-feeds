@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base32"
 	"errors"
 	"fmt"
 	"image"
@@ -20,6 +21,7 @@ import (
 	"github.com/h2non/filetype"
 	"github.com/nfnt/resize"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/blake2b"
 )
 
 var (
@@ -209,4 +211,26 @@ func BaseWithoutExt(filename string) string {
 	base := filepath.Base(filename)
 	ext := filepath.Ext(base)
 	return strings.TrimSuffix(base, ext)
+}
+
+func FastHash(data []byte) string {
+	sum := blake2b.Sum256(data)
+
+	// Base32 is URL-safe, unlike Base64, and shorter than hex.
+	encoding := base32.StdEncoding.WithPadding(base32.NoPadding)
+	hash := strings.ToLower(encoding.EncodeToString(sum[:]))
+
+	return hash
+}
+
+func FastHashString(s string) string {
+	return FastHash([]byte(s))
+}
+
+func FastHashFile(fn string) (string, error) {
+	data, err := os.ReadFile(fn)
+	if err != nil {
+		return "", err
+	}
+	return FastHash(data), nil
 }
