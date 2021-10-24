@@ -138,13 +138,25 @@ func NewTikTokJob(conf *Config) cron.Job {
 	name := "tiktok"
 	url := fmt.Sprintf("@<%s %s>", name, URLForFeed(conf, name))
 
-	conf.Feeds[name] = &Feed{
+	feed := &Feed{
 		Name: name,
 		Description: fmt.Sprintf(
 			"I am @%s an automated feed that twts every 30m with the current time (UTC)",
 			name,
 		),
 	}
+
+	fn := filepath.Join(conf.DataDir, fmt.Sprintf("%s.png", feed.Name))
+	if Exists(fn) && feed.Avatar == "" {
+		feed.Avatar = fmt.Sprintf("%s/%s/avatar.png", conf.BaseURL, feed.Name)
+		if avatarHash, err := FastHashFile(fn); err == nil {
+			feed.Avatar += "#" + avatarHash
+		} else {
+			log.WithError(err).Warnf("error updating avatar hash for %s", feed.Name)
+		}
+	}
+
+	conf.Feeds[name] = feed
 
 	return &TikTokJob{
 		conf:    conf,
