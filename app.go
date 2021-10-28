@@ -29,9 +29,11 @@ func NewApp(options ...Option) (*App, error) {
 		}
 	}
 
-	if err := conf.LoadFeeds(); err != nil {
-		log.WithError(err).Error("error loading feeds")
-		return nil, fmt.Errorf("error loading feeds: %w", err)
+	if Exists(conf.FeedsFile) {
+		if err := conf.LoadFeeds(); err != nil {
+			log.WithError(err).Error("error loading feeds")
+			return nil, fmt.Errorf("error loading feeds: %w", err)
+		}
 	}
 
 	cron := cron.New()
@@ -84,7 +86,7 @@ func (app *App) signalHandler(ch chan os.Signal) {
 
 func (app *App) setupSignalHandlers() error {
 	ch := make(chan os.Signal)
-	signal.Notify(ch)
+	signal.Notify(ch, syscall.SIGHUP)
 
 	go app.signalHandler(ch)
 
