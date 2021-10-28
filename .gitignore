@@ -3,6 +3,6 @@
 *.txt
 .DS_Store
 
-/data
+/dist
 /feeds
 /feeds.yaml
