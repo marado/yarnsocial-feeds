@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"sort"
+	"syscall"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -66,6 +68,29 @@ func (app *App) setupCronJobs() error {
 	return nil
 }
 
+func (app *App) signalHandler(ch chan os.Signal) {
+	for sig := range ch {
+		switch sig {
+		case syscall.SIGHUP:
+			log.Info("reloading feeds on SIGHUP")
+			if err := app.conf.LoadFeeds(); err != nil {
+				log.WithError(err).Warn("error reloading feeds")
+			}
+		default:
+			log.Warnf("ignoring unhandled signal %s", sig)
+		}
+	}
+}
+
+func (app *App) setupSignalHandlers() error {
+	ch := make(chan os.Signal)
+	signal.Notify(ch)
+
+	go app.signalHandler(ch)
+
+	return nil
+}
+
 func (app *App) runStartupJobs() {
 	time.Sleep(time.Second * 5)
 
@@ -112,6 +137,12 @@ func (app *App) Run() error {
 	}
 	app.cron.Start()
 	log.Info("started background jobs")
+
+	if err := app.setupSignalHandlers(); err != nil {
+		log.WithError(err).Error("error setting up signal handlers")
+		return err
+	}
+	log.Info("setup signal handlers")
 
 	log.Infof("feeds %s listening on http://%s", FullVersion(), app.conf.Addr)
 
