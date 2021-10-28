@@ -1,8 +1,8 @@
 .PHONY: dev build install image test release clean
 
+VERSION=$(shell git describe --abbrev=0 --tags 2>/dev/null || echo "$VERSION")
+COMMIT=$(shell git rev-parse --short HEAD || echo "$COMMIT")
 CGO_ENABLED=0
-VERSION=$(shell git describe --abbrev=0 --tags)
-COMMIT=$(shell git rev-parse --short HEAD)
 
 all: dev
 

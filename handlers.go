@@ -185,6 +185,8 @@ func (app *App) FeedHandler(w http.ResponseWriter, r *http.Request) {
 			"Avatar":       feed.Avatar,
 			"Description":  feed.Description,
 			"LastModified": fileInfo.ModTime().UTC().Format(time.RFC3339),
+
+			"SoftwareVersion": FullVersion(),
 		}
 
 		preamble, err := RenderPlainText(preambleTemplate, ctx)

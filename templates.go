@@ -23,6 +23,9 @@ const preambleTemplate = `# Twtxt is an open, distributed microblogging platform
 #
 # Learn more about twtxt at  https://github.com/buckket/twtxt
 #
+# This is an automated Yarn.social feed running feeds v{{ .SoftwareVersion }}
+# Learn more about Yarn.social at https://yarn.social
+#
 # nick        = {{ .Name }}
 # url         = {{ .URL }}
 # source      = {{ .Source }}
