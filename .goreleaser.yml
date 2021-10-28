@@ -1,0 +1,30 @@
+---
+builds:
+  - id: feeds
+    binary: feeds
+    main: .
+    flags: -tags "static_build"
+    ldflags: >-
+      -w
+      -X git.mills.io/yarnsocial/feeds.Version={{.Version}}
+      -X git.mills.io/yarnsocial/feeds.Commit={{.Commit}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - freebsd
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    goarm:
+      - 6
+      - 7
+signs:
+  - artifacts: checksum
+release:
+  gitea:
+    owner: yarnsocial
+    name: feeds
+  draft: true
+gitea_urls:
+  api: https://git.mills.io/api/v1/
