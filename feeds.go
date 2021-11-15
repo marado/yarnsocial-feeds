@@ -143,9 +143,25 @@ func ValidateTwitterFeed(conf *Config, handle string) (Feed, error) {
 	name := fmt.Sprintf("twitter-%s", handle)
 	uri := fmt.Sprintf("twitter://%s", handle)
 
+	opts := &ImageOptions{
+		Resize:  true,
+		ResizeW: avatarResolution,
+		ResizeH: avatarResolution,
+	}
+
+	profile, err := twitterscraper.GetProfile(handle)
+	if err != nil {
+		log.WithError(err).Warnf("error retrieving twitter profile for %s", handle)
+	}
+
+	filename := fmt.Sprintf("%s.png", name)
+
+	if err := DownloadImage(conf, profile.Avatar, filename, opts); err != nil {
+		log.WithError(err).Warnf("error downloading feed image from %s", profile.Avatar)
+	}
+
 	return Feed{Name: name, URI: uri}, nil
 }
-
 // ValidateFeed ...
 func ValidateRSSFeed(conf *Config, uri string) (Feed, error) {
 	feed, err := TestRSSFeed(uri)
@@ -238,6 +254,23 @@ func UpdateTwitterFeed(conf *Config, name, handle string) error {
 		} else {
 			old++
 		}
+	}
+
+	opts := &ImageOptions{
+		Resize:  true,
+		ResizeW: avatarResolution,
+		ResizeH: avatarResolution,
+	}
+
+	profile, err := twitterscraper.GetProfile(handle)
+	if err != nil {
+		log.WithError(err).Warnf("error retrieving twitter profile for %s", handle)
+	}
+
+	filename := fmt.Sprintf("%s.png", name)
+
+	if err := DownloadImage(conf, profile.Avatar, filename, opts); err != nil {
+		log.WithError(err).Warnf("error downloading feed image from %s", profile.Avatar)
 	}
 
 	if (old + new) == 0 {
