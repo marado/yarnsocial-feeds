@@ -62,10 +62,10 @@ func TestTwitterFeed(handle string) error {
 			return fmt.Errorf("error scraping tweets from %s: %w", handle, tweet.Error)
 		}
 
+		count++
 		if tweet.IsRetweet {
 			continue
 		}
-		count++
 	}
 
 	if count == 0 {
@@ -160,8 +160,9 @@ func ValidateTwitterFeed(conf *Config, handle string) (Feed, error) {
 		log.WithError(err).Warnf("error downloading feed image from %s", profile.Avatar)
 	}
 
-	return Feed{Name: name, URI: uri}, nil
+	return Feed{Name: name, URI: uri, Avatar: fmt.Sprintf("%s/%s/avatar.png", conf.BaseURL, name)}, nil
 }
+
 // ValidateFeed ...
 func ValidateRSSFeed(conf *Config, uri string) (Feed, error) {
 	feed, err := TestRSSFeed(uri)
@@ -256,21 +257,24 @@ func UpdateTwitterFeed(conf *Config, name, handle string) error {
 		}
 	}
 
-	opts := &ImageOptions{
-		Resize:  true,
-		ResizeW: avatarResolution,
-		ResizeH: avatarResolution,
-	}
+	avatarFile := filepath.Join(conf.DataDir, fmt.Sprintf("%s.png", name))
+	if !Exists(avatarFile) {
+		filename := fmt.Sprintf("%s.png", name)
 
-	profile, err := twitterscraper.GetProfile(handle)
-	if err != nil {
-		log.WithError(err).Warnf("error retrieving twitter profile for %s", handle)
-	}
+		opts := &ImageOptions{
+			Resize:  true,
+			ResizeW: avatarResolution,
+			ResizeH: avatarResolution,
+		}
+			
+		profile, err := twitterscraper.GetProfile(handle)
+		if err != nil {
+			log.WithError(err).Warnf("error retrieving twitter profile for %s", handle)
+		}
 
-	filename := fmt.Sprintf("%s.png", name)
-
-	if err := DownloadImage(conf, profile.Avatar, filename, opts); err != nil {
-		log.WithError(err).Warnf("error downloading feed image from %s", profile.Avatar)
+		if err := DownloadImage(conf, profile.Avatar, filename, opts); err != nil {
+			log.WithError(err).Warnf("error downloading feed image from %s", profile.Avatar)
+		}
 	}
 
 	if (old + new) == 0 {
