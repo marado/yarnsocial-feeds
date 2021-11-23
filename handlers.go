@@ -322,7 +322,7 @@ func (app *App) WeAreFeedsHandler(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		for _, feed := range app.GetFeeds() {
-			fmt.Fprintf(w, "%s %s\n", feed.Name, feed.URI)
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", feed.Name, feed.URI, feed.Avatar, feed.Description)
 		}
 		return
 	}
