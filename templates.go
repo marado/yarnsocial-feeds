@@ -116,7 +116,7 @@ const feedsTemplate = `
         {{ if .Feeds }}
           <ul>
             {{ range .Feeds }}
-              <li><a href="{{ .URI }}">{{ .Name }}</a>&nbsp;<small>({{ .LastModified }})</small></li>
+              <li><a href="{{ .URI }}">{{ .Name }}</a>&nbsp;<small>({{ .LastModified }})</small>: {{ .Description }}</li>
             {{ end }}
           </ul>
         {{ else }}
