@@ -122,7 +122,11 @@ func (app *App) GetFeeds() (feeds []Feed) {
 		lastModified := humanize.Time(stat.ModTime())
 
 		uri := fmt.Sprintf("%s/%s/twtxt.txt", app.conf.BaseURL, name)
-		feeds = append(feeds, Feed{Name: name, URI: uri, LastModified: lastModified})
+		if feed, ok := app.conf.Feeds[name]; ok {
+			feed.URI = uri
+			feed.LastModified = lastModified
+			feeds = append(feeds, *feed)
+		}
 	}
 
 	sort.Slice(feeds, func(i, j int) bool { return feeds[i].Name < feeds[j].Name })
