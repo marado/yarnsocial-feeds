@@ -39,7 +39,12 @@ func CleanTwt(text string) string {
 
 func RotateFile(fn string) error {
 	now := time.Now().Unix()
-	return os.Rename(fn, fmt.Sprintf("%s.%d", fn, now))
+	newFn := fmt.Sprintf("%s.%d", fn, now)
+	if err := os.Rename(fn, newFn); err != nil {
+		log.WithError(err).Errorf("error renaming %s", fn)
+		return fmt.Errorf("error renaming %s to %s: %w", fn, newFn)
+	}
+	return os.WriteFile(fn, nil, 0644)
 }
 
 func Exists(name string) bool {
