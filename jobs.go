@@ -29,7 +29,7 @@ var (
 
 func init() {
 	Jobs = map[string]JobSpec{
-		"RotateFeeds": NewJobSpec("@daily", NewRotateFeedsJob),
+		"RotateFeeds": NewJobSpec("@hourly", NewRotateFeedsJob),
 		"UpdateFeeds": NewJobSpec("@every 5m", NewUpdateFeedsJob),
 		"TikTokBot":   NewJobSpec("0 0,30 * * * *", NewTikTokJob),
 	}

@@ -22,7 +22,7 @@ const (
 	DefaultFeedsFile = "feeds.yaml"
 
 	// DefaultMaxFeedSize is the default maximum feed size before rotation
-	DefaultMaxFeedSize = 1 << 20 // ~1MB
+	DefaultMaxFeedSize = 1 << 19 // ~512KB
 )
 
 func NewConfig() *Config {
