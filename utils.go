@@ -42,7 +42,7 @@ func RotateFile(fn string) error {
 	newFn := fmt.Sprintf("%s.%d", fn, now)
 	if err := os.Rename(fn, newFn); err != nil {
 		log.WithError(err).Errorf("error renaming %s", fn)
-		return fmt.Errorf("error renaming %s to %s: %w", fn, newFn)
+		return fmt.Errorf("error renaming %s to %s: %w", fn, newFn, err)
 	}
 	return os.WriteFile(fn, nil, 0644)
 }
