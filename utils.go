@@ -97,6 +97,7 @@ func DownloadImage(conf *Config, url string, filename string, opts *ImageOptions
 		return err
 	}
 	defer tf.Close()
+	defer os.Remove(tf.Name())
 
 	if _, err := io.Copy(tf, res.Body); err != nil {
 		log.WithError(err).Error("error writng temporary file")
