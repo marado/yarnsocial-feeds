@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/aofei/cameron"
+	"github.com/badgerodon/ioutil"
 	"github.com/gorilla/mux"
 	"github.com/rickb777/accept"
 	log "github.com/sirupsen/logrus"
@@ -194,18 +195,6 @@ func (app *App) FeedHandler(w http.ResponseWriter, r *http.Request) {
 			log.WithError(err).Warn("error rendering twtxt preamble")
 		}
 
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", int64(len(preamble))+fileInfo.Size()))
-		w.Header().Set("Last-Modified", fileInfo.ModTime().UTC().Format(http.TimeFormat))
-
-		if r.Method == http.MethodHead {
-			return
-		}
-
-		if _, err = w.Write([]byte(preamble)); err != nil {
-			log.WithError(err).Warn("error writing twtxt preamble")
-		}
-
 		f, err := os.Open(fn)
 		if err != nil {
 			log.WithError(err).Error("error opening feed")
@@ -214,7 +203,12 @@ func (app *App) FeedHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer f.Close()
 
-		_, _ = io.Copy(w, f)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", int64(len(preamble))+fileInfo.Size()))
+		w.Header().Set("Last-Modified", fileInfo.ModTime().UTC().Format(http.TimeFormat))
+
+		mrs := ioutil.NewMultiReadSeeker(strings.NewReader(preamble), f)
+		http.ServeContent(w, r, "", fileInfo.ModTime(), mrs)
 		return
 	}
 	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
