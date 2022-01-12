@@ -2,6 +2,7 @@
 *.bak
 *.txt
 .DS_Store
+*.sw?
 
 /dist
 /feeds

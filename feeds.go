@@ -49,8 +49,9 @@ func ProcessFeedContent(title, desc string, max int) string {
 		return fmt.Sprintf("%s: %s", title, err)
 	}
 	markdown = CleanTwt(fmt.Sprintf("**%s**\n%s", title, markdown))
-	if len(markdown) > max {
-		return fmt.Sprintf("%s ...", markdown[:max])
+	markdownRunes := []rune(markdown)
+	if len(markdownRunes) > max {
+		return fmt.Sprintf("%s ...", string(markdownRunes[:max]))
 	}
 	return markdown
 }
@@ -266,7 +267,7 @@ func UpdateTwitterFeed(conf *Config, name, handle string) error {
 			ResizeW: avatarResolution,
 			ResizeH: avatarResolution,
 		}
-			
+
 		profile, err := twitterscraper.GetProfile(handle)
 		if err != nil {
 			log.WithError(err).Warnf("error retrieving twitter profile for %s", handle)
