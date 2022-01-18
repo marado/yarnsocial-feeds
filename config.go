@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -43,14 +44,33 @@ func (conf *Config) LoadFeeds() error {
 
 	for _, feed := range conf.Feeds {
 		fn := filepath.Join(conf.DataDir, fmt.Sprintf("%s.png", feed.Name))
-		if Exists(fn) && feed.Avatar == "" {
-			feed.Avatar = fmt.Sprintf("%s/%s/avatar.png", conf.BaseURL, feed.Name)
-			if avatarHash, err := FastHashFile(fn); err == nil {
-				feed.Avatar += "#" + avatarHash
-			} else {
-				log.WithError(err).Warnf("error updating avatar hash for %s", feed.Name)
+		if !Exists(fn) {
+			continue
+		}
+
+		u, err := url.Parse(fn)
+		if err != nil {
+			log.WithError(err).Errorf("error parsing avatar url for %s", feed.Name)
+			continue
+		}
+
+		avatarURL := fmt.Sprintf("%s/%s/avatar.png", conf.BaseURL, feed.Name)
+
+		avatarHash, err := FastHashFile(fn)
+		if err != nil {
+			log.WithError(err).Errorf("error computing avatar hash for %s", feed.Name)
+			fileInfo, err := os.Stat(fn)
+			if err != nil {
+				log.WithError(err).Errorf("error computing avatar stat for %s", feed.Name)
+				continue
+			}
+			avatarURL += fmt.Sprintf("#%s", fileInfo.ModTime())
+		} else {
+			if u.Fragment != avatarHash {
+				avatarURL += "#" + avatarHash
 			}
 		}
+		feed.Avatar = avatarURL
 	}
 
 	return nil
