@@ -83,8 +83,10 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 		u, err := ParseURI(uri)
 		if err != nil {
-			log.WithError(err).Errorf("error parsing feed %s", uri)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			if err := renderMessage(w, http.StatusBadRequest, "Error", "Invalid URI"); err != nil {
+				log.WithError(err).Error("error rendering message template")
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
 			return
 		}
 

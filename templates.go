@@ -164,7 +164,10 @@ const messageTemplate = `
   <main class="container">
     <article class="grid">
       <div>
-        <p>{{ .Message }}</p>
+		<hgroup>
+		  <h1>{{ .Title }}</h1>
+          <p>{{ .Message }}</p>
+	    </hgroup>
       </div>
     </article>
   </main>
