@@ -41,6 +41,7 @@ const indexTemplate = `
   <head>
     <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="yarn-uri" content="/%s/twtxt.txt" /L
     <title>twtxtfeeds :: {{ .Title }}</title>
   </head>
 <body>
