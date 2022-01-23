@@ -114,7 +114,7 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if _, ok := app.conf.Feeds[feed.Name]; ok {
-			if err := renderMessage(w, http.StatusConflict, "Error", "Feed alreadyd exists"); err != nil {
+			if err := renderMessage(w, http.StatusConflict, "Error", "Feed already exists"); err != nil {
 				log.WithError(err).Error("error rendering message template")
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}
