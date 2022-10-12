@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
@@ -30,10 +29,16 @@ var (
 	ErrNoSuitableFeedsFound = errors.New("error: no suitable RSS or Atom feeds found")
 )
 
+const (
+	FeedTypeRSS = "rss"
+	FeedTypeBot = "bot"
+)
+
 // Feed ...
 type Feed struct {
 	Name string
 	URI  string
+	Type string
 
 	Avatar      string
 	Description string
@@ -195,94 +200,7 @@ func ValidateRSSFeed(conf *Config, uri string) (Feed, error) {
 		}
 	}
 
-	return Feed{Name: name, URI: uri}, nil
-}
-
-// Code borrowed from https://github.com/n0madic/twitter2rss
-// With permission from the author: https://github.com/n0madic/twitter2rss/issues/3
-func UpdateTwitterFeed(conf *Config, name, handle string) error {
-	var lastModified = time.Time{}
-
-	fn := filepath.Join(conf.DataDir, fmt.Sprintf("%s.txt", name))
-
-	stat, err := os.Stat(fn)
-	if err == nil {
-		lastModified = stat.ModTime()
-	}
-
-	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	old, new := 0, 0
-	for tweet := range twitterscraper.WithReplies(false).GetTweets(context.Background(), handle, maxTweets) {
-		if tweet.Error != nil {
-			return fmt.Errorf("error scraping tweets from %s: %w", handle, tweet.Error)
-		}
-
-		if tweet.IsRetweet {
-			continue
-		}
-
-		if tweet.TimeParsed.After(lastModified) {
-			var title string
-
-			titleSplit := strings.FieldsFunc(tweet.Text, func(r rune) bool {
-				return r == '\n' || r == '!' || r == '?' || r == ':' || r == '<' || r == '.' || r == ','
-			})
-			if len(titleSplit) > 0 {
-				if strings.HasPrefix(titleSplit[0], "a href") || strings.HasPrefix(titleSplit[0], "http") {
-					title = "link"
-				} else {
-					title = titleSplit[0]
-				}
-			}
-			title = strings.TrimSuffix(title, "https")
-			title = strings.TrimSpace(title)
-
-			text := fmt.Sprintf(
-				twtxtTemplate,
-				tweet.TimeParsed.Format(time.RFC3339),
-				ProcessFeedContent(title, tweet.HTML, maxTwtLength-len(tweet.PermanentURL)),
-				tweet.PermanentURL,
-			)
-			_, err := f.WriteString(text)
-			if err != nil {
-				return err
-			}
-
-		} else {
-			old++
-		}
-	}
-
-	avatarFile := filepath.Join(conf.DataDir, fmt.Sprintf("%s.png", name))
-	if !Exists(avatarFile) {
-		filename := fmt.Sprintf("%s.png", name)
-
-		opts := &ImageOptions{
-			Resize:  true,
-			ResizeW: avatarResolution,
-			ResizeH: avatarResolution,
-		}
-
-		profile, err := twitterscraper.GetProfile(handle)
-		if err != nil {
-			log.WithError(err).Warnf("error retrieving twitter profile for %s", handle)
-		}
-
-		if err := DownloadImage(conf, profile.Avatar, filename, opts); err != nil {
-			log.WithError(err).Warnf("error downloading feed image from %s", profile.Avatar)
-		}
-	}
-
-	if (old + new) == 0 {
-		log.WithField("name", name).WithField("handle", handle).Warn("empty or bad twitter handle")
-	}
-
-	return nil
+	return Feed{Name: name, URI: uri, Type: FeedTypeRSS}, nil
 }
 
 func UpdateRSSFeed(conf *Config, name, url string) error {

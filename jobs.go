@@ -100,10 +100,6 @@ func (job *UpdateFeedsJob) Run() {
 				if err := UpdateRSSFeed(conf, name, feed.URI); err != nil {
 					log.WithError(err).Errorf("error updating rss feed %s: %s", name, feed.URI)
 				}
-			case "twitter":
-				if err := UpdateTwitterFeed(conf, name, u.Config); err != nil {
-					log.WithError(err).Errorf("error updating twitter feed %s: %s", name, feed.URI)
-				}
 			default:
 				log.Warnf("error unknown feed type %s: %s", name, feed.URI)
 			}
@@ -140,6 +136,7 @@ func NewTikTokJob(conf *Config) cron.Job {
 
 	feed := &Feed{
 		Name: name,
+		Type: FeedTypeBot,
 		Description: fmt.Sprintf(
 			"I am @%s an automated feed that twts every 30m with the current time (UTC)",
 			name,

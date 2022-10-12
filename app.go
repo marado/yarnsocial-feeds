@@ -85,7 +85,7 @@ func (app *App) signalHandler(ch chan os.Signal) {
 }
 
 func (app *App) setupSignalHandlers() error {
-	ch := make(chan os.Signal)
+	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGHUP)
 
 	go app.signalHandler(ch)
@@ -122,7 +122,12 @@ func (app *App) GetFeeds() (feeds []Feed) {
 		lastModified := humanize.Time(stat.ModTime())
 
 		uri := fmt.Sprintf("%s/%s/twtxt.txt", app.conf.BaseURL, name)
-		feed := Feed{Name: name, URI: uri, LastModified: lastModified}
+		feed := Feed{
+			Name:         name,
+			URI:          uri,
+			Type:         FeedTypeRSS,
+			LastModified: lastModified,
+		}
 		if feedConfig, ok := app.conf.Feeds[name]; ok {
 			feed.Avatar = feedConfig.Avatar
 			feed.Description = feedConfig.Description

@@ -95,8 +95,6 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		switch u.Type {
 		case "rss", "http", "https":
 			feed, err = ValidateRSSFeed(app.conf, uri)
-		case "twitter":
-			feed, err = ValidateTwitterFeed(app.conf, u.Config)
 		default:
 			if err := renderMessage(w, http.StatusBadRequest, "Error", "Unsupproted feed"); err != nil {
 				log.WithError(err).Error("error rendering message template")
@@ -184,6 +182,7 @@ func (app *App) FeedHandler(w http.ResponseWriter, r *http.Request) {
 		ctx := map[string]string{
 			"Name":         feed.Name,
 			"URL":          fmt.Sprintf("%s/%s/twtxt.txt", app.conf.BaseURL, feed.Name),
+			"Type":         feed.Type,
 			"Source":       feed.URI,
 			"Avatar":       feed.Avatar,
 			"Description":  feed.Description,

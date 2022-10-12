@@ -102,10 +102,6 @@ func main() {
 			if err := UpdateRSSFeed(conf, name, uri); err != nil {
 				log.WithError(err).Errorf("error updating rss feed %s: %s", name, uri)
 			}
-		case "twitter":
-			if err := UpdateTwitterFeed(conf, name, u.Config); err != nil {
-				log.WithError(err).Errorf("error updating twitter feed %s: %s", name, uri)
-			}
 		default:
 			log.Warnf("error unknown feed type %s: %s", name, uri)
 		}
