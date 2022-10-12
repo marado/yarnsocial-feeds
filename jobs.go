@@ -91,18 +91,23 @@ func NewUpdateFeedsJob(conf *Config) cron.Job {
 func (job *UpdateFeedsJob) Run() {
 	conf := job.conf
 	for name, feed := range conf.Feeds {
+		if feed.URI == "" {
+			continue
+		}
+
 		u, err := ParseURI(feed.URI)
 		if err != nil {
 			log.WithError(err).Errorf("error parsing feed %s: %s", name, feed.URI)
-		} else {
-			switch u.Type {
-			case "rss", "http", "https":
-				if err := UpdateRSSFeed(conf, name, feed.URI); err != nil {
-					log.WithError(err).Errorf("error updating rss feed %s: %s", name, feed.URI)
-				}
-			default:
-				log.Warnf("error unknown feed type %s: %s", name, feed.URI)
+			continue
+		}
+
+		switch u.Type {
+		case "rss", "http", "https":
+			if err := UpdateRSSFeed(conf, name, feed.URI); err != nil {
+				log.WithError(err).Errorf("error updating rss feed %s: %s", name, feed.URI)
 			}
+		default:
+			log.Warnf("error unknown feed type %s: %s", name, feed.URI)
 		}
 	}
 }

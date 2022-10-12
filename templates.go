@@ -29,7 +29,9 @@ const preambleTemplate = `# Twtxt is an open, distributed microblogging platform
 # nick        = {{ .Name }}
 # url         = {{ .URL }}
 # type        = {{ .Type }}
+{{ with .Source -}}
 # source      = {{ .Source }}
+{{ end -}}
 # avatar      = {{ .Avatar }}
 # description = {{ .Description }}
 # updated_at  = {{ .LastModified }}
