@@ -30,7 +30,7 @@ const preambleTemplate = `# Twtxt is an open, distributed microblogging platform
 # url         = {{ .URL }}
 # type        = {{ .Type }}
 {{ with .Source -}}
-# source      = {{ .Source }}
+# source      = {{ . }}
 {{ end -}}
 # avatar      = {{ .Avatar }}
 # description = {{ .Description }}
