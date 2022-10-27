@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,7 +13,6 @@ import (
 	"github.com/andyleap/microformats"
 	"github.com/gosimple/slug"
 	"github.com/mmcdole/gofeed"
-	twitterscraper "github.com/n0madic/twitter-scraper"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -59,26 +57,6 @@ func ProcessFeedContent(title, desc string, max int) string {
 		return fmt.Sprintf("%s ...", string(markdownRunes[:max]))
 	}
 	return markdown
-}
-
-func TestTwitterFeed(handle string) error {
-	count := 0
-	for tweet := range twitterscraper.WithReplies(false).GetTweets(context.Background(), handle, maxTweets) {
-		if tweet.Error != nil {
-			return fmt.Errorf("error scraping tweets from %s: %w", handle, tweet.Error)
-		}
-
-		count++
-		if tweet.IsRetweet {
-			continue
-		}
-	}
-
-	if count == 0 {
-		log.WithField("handle", handle).WithField("handle", handle).Warn("empty or bad twitter handle")
-	}
-
-	return nil
 }
 
 func TestRSSFeed(uri string) (*gofeed.Feed, error) {
@@ -137,36 +115,6 @@ func FindRSSFeed(uri string) (*gofeed.Feed, string, error) {
 	}
 
 	return feed, feedURI, nil
-}
-
-// ValidateTwitterFeed ...
-func ValidateTwitterFeed(conf *Config, handle string) (Feed, error) {
-	err := TestTwitterFeed(handle)
-	if err != nil {
-		log.WithError(err).Warnf("invalid twitter feed %s", handle)
-	}
-
-	name := fmt.Sprintf("twitter-%s", handle)
-	uri := fmt.Sprintf("twitter://%s", handle)
-
-	opts := &ImageOptions{
-		Resize:  true,
-		ResizeW: avatarResolution,
-		ResizeH: avatarResolution,
-	}
-
-	profile, err := twitterscraper.GetProfile(handle)
-	if err != nil {
-		log.WithError(err).Warnf("error retrieving twitter profile for %s", handle)
-	}
-
-	filename := fmt.Sprintf("%s.png", name)
-
-	if err := DownloadImage(conf, profile.Avatar, filename, opts); err != nil {
-		log.WithError(err).Warnf("error downloading feed image from %s", profile.Avatar)
-	}
-
-	return Feed{Name: name, URI: uri, Avatar: fmt.Sprintf("%s/%s/avatar.png", conf.BaseURL, name)}, nil
 }
 
 // ValidateFeed ...

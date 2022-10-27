@@ -1,6 +1,6 @@
 # feeds
 
-`feeds` is an RSS/Atom and Twitter feed aggregator for [twtxt](https://twtxt.readthedocs.io/en/latest/)
+`feeds` is an RSS/Atom feed aggregator for [twtxt](https://twtxt.readthedocs.io/en/latest/)
 that consumes RSS/Atom feeds and processes them into twtxt feeds. These can
 then be consumed by any standard twtxt client such as:
 
@@ -36,7 +36,7 @@ Then visit: http://localhost:8000/
 
 ## Related Projects
 
-- [twtxt](https://git.mills.io/prologic/twtxt)
+- [Yarn](https://git.mills.io/yarnsocial/yarn)
 
 ## License
 

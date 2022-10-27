@@ -59,19 +59,18 @@ const indexTemplate = `
       <div>
         <div class="container-fluid">
           <form action="/" method="POST">
-			<input type="uri" id="uri" name="uri" placeholder="Enter any website URL, RSS feed URI or twitter://<handle>" required>
+			<input type="uri" id="uri" name="uri" placeholder="Enter any Website's URL or an RSS/Atom feed URI" required>
             <div><button type="submit">Go!</button>
           </form>
         </div>
         <p>
-          twtxtfeeds is a command-line tool and web app that processes RSS, Atom and Twitter feeds
+          feeds is a command-line tool and web app that processes RSS and Atom feeds
           into <a href="https://twtxt.readthedocs.io/en/stable/index.html">twtxt</a>
           feeds for consumption by <i>twtxt</i> clients such as <a href="https://twtxt.net">twtxt.net</a>
           and <a href="https://yarn.social">Yarn.social</a> pods.
         </p>
         <p>
-          You may freely create new feeds here by simply dropping a website's URL,
-		  any valid RSS/Atom URL or a Twitter handle in the form of <code>twitter://<handle></code>.
+          You may freely create new feeds here by simply dropping a website's URL or any valid RSS/Atom URI.
         </p>
         <p>
           You are also welcome to subscribe to any of the <a href="/feeds">feeds</a>
