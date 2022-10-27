@@ -134,6 +134,7 @@ func ValidateRSSFeed(conf *Config, uri string) (Feed, error) {
 
 	name := slug.Make(feed.Title)
 
+	var avatar string
 	if feed.Image != nil && feed.Image.URL != "" {
 		opts := &ImageOptions{
 			Resize:  true,
@@ -141,14 +142,27 @@ func ValidateRSSFeed(conf *Config, uri string) (Feed, error) {
 			ResizeH: avatarResolution,
 		}
 
-		filename := fmt.Sprintf("%s.png", name)
+		fn := fmt.Sprintf("%s.png", slug.Make(feed.Title))
 
-		if err := DownloadImage(conf, feed.Image.URL, filename, opts); err != nil {
+		if err := DownloadImage(conf, feed.Image.URL, fn, opts); err != nil {
 			log.WithError(err).Warnf("error downloading feed image from %s", feed.Image.URL)
+		} else {
+			avatar = fmt.Sprintf("%s/%s/avatar.png", conf.BaseURL, name)
+			if avatarHash, err := FastHashFile(fn); err == nil {
+				avatar += "#" + avatarHash
+			} else {
+				log.WithError(err).Warnf("error updating avatar hash for %s", name)
+			}
 		}
 	}
 
-	return Feed{Name: name, URI: uri, Type: FeedTypeRSS}, nil
+	return Feed{
+		Name:        name,
+		URI:         uri,
+		Avatar:      avatar,
+		Description: feed.Description,
+		Type:        FeedTypeRSS,
+	}, nil
 }
 
 func UpdateRSSFeed(conf *Config, name, url string) error {
