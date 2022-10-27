@@ -50,7 +50,7 @@ const indexTemplate = `
 <body>
   <nav class="container-fluid">
     <ul>
-      <li><strong><a href="/">TwtxtFeeds</a></strong></li>
+      <li><strong><a href="/">Twtxt Feeds</a></strong></li>
       <li><a href="/feeds">Feeds</a></li>
     </ul>
   </nav>
