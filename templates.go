@@ -59,7 +59,7 @@ const indexTemplate = `
       <div>
         <div class="container-fluid">
           <form action="/" method="POST">
-			<input type="uri" id="uri" name="uri" placeholder="Enter any Website's URL or an RSS/Atom feed URI" required>
+			<input type="uri" id="uri" name="uri" placeholder="Enter any Website's URL, an RSS/Atom feed URI, or mastodon://handle" required>
             <div><button type="submit">Go!</button>
           </form>
         </div>
