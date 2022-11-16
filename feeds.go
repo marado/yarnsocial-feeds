@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
@@ -117,7 +118,8 @@ func FindRSSFeed(uri string) (*gofeed.Feed, string, error) {
 	return feed, feedURI, nil
 }
 
-// ValidateFeed ...
+// ValidateRSSFeed validates an RSS/Atom feed given a `uri` and returns a `Feed` object
+// on success or a zero-value `Feed` object and `error` on an error.
 func ValidateRSSFeed(conf *Config, uri string) (Feed, error) {
 	feed, err := TestRSSFeed(uri)
 	if err != nil {
@@ -230,4 +232,64 @@ func UpdateRSSFeed(conf *Config, name, url string) error {
 	}
 
 	return nil
+}
+
+// ValidateMastodonFeed validates a Mastodon handle given a `uri` (a Mastodon handle)
+//
+//	and returns a `Feed` object on success or a zero-value `Feed` object and `error`
+//
+// on an error.
+func ValidateMastodonFeed(conf *Config, handle string) (Feed, error) {
+	user, server, err := ParseMastodonHandle(handle)
+	if err != nil {
+		return Feed{}, fmt.Errorf("error parsing Mastodon Handle %q: %w", handle, err)
+	}
+
+	rssURI := fmt.Sprintf("https://%s/@%s.rss", server, user)
+
+	feed, err := TestRSSFeed(rssURI)
+	if err != nil {
+		return Feed{}, fmt.Errorf("error: invalid Mastodon RSS URI %q", rssURI)
+	}
+
+	name := handle
+
+	var avatar string
+	if feed.Image != nil && feed.Image.URL != "" {
+		opts := &ImageOptions{
+			Resize:  true,
+			ResizeW: avatarResolution,
+			ResizeH: avatarResolution,
+		}
+
+		fn := fmt.Sprintf("%s.png", slug.Make(feed.Title))
+
+		if err := DownloadImage(conf, feed.Image.URL, fn, opts); err != nil {
+			log.WithError(err).Warnf("error downloading feed image from %s", feed.Image.URL)
+		} else {
+			avatar = fmt.Sprintf("%s/%s/avatar.png", conf.BaseURL, name)
+			if avatarHash, err := FastHashFile(fn); err == nil {
+				avatar += "#" + avatarHash
+			} else {
+				log.WithError(err).Warnf("error updating avatar hash for %s", name)
+			}
+		}
+	}
+
+	return Feed{
+		Name:        name,
+		URI:         rssURI,
+		Avatar:      avatar,
+		Description: feed.Description,
+		Type:        FeedTypeRSS,
+	}, nil
+}
+
+func ParseMastodonHandle(handle string) (string, string, error) {
+	tokens := strings.Split(handle, "@")
+	if len(tokens) != 2 {
+		return "", "", fmt.Errorf("error: expected 2 tokens but got %d", len(tokens))
+	}
+
+	return tokens[0], tokens[1], nil
 }

@@ -95,6 +95,8 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		switch u.Type {
 		case "rss", "http", "https":
 			feed, err = ValidateRSSFeed(app.conf, uri)
+		case "mastodon":
+			feed, err = ValidateMastodonFeed(app.conf, u.Rest)
 		default:
 			if err := renderMessage(w, http.StatusBadRequest, "Error", "Unsupproted feed"); err != nil {
 				log.WithError(err).Error("error rendering message template")
@@ -104,7 +106,7 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err != nil {
-			if err := renderMessage(w, http.StatusBadRequest, "Error", fmt.Sprintf("Unable to find a valid RSS/Atom feed for: %s", uri)); err != nil {
+			if err := renderMessage(w, http.StatusBadRequest, "Error", fmt.Sprintf("Unable to find a valid RSS/Atom feed for %s: %s", uri, err)); err != nil {
 				log.WithError(err).Error("error rendering message template")
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}

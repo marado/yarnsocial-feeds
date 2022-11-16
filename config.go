@@ -43,6 +43,9 @@ func (conf *Config) LoadFeeds() error {
 	}
 
 	for _, feed := range conf.Feeds {
+		if feed == nil {
+			continue
+		}
 		fn := filepath.Join(conf.DataDir, fmt.Sprintf("%s.png", feed.Name))
 		if !Exists(fn) {
 			continue
