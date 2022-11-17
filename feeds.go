@@ -287,9 +287,11 @@ func ValidateMastodonFeed(conf *Config, handle string) (Feed, error) {
 
 func ParseMastodonHandle(handle string) (string, string, error) {
 	tokens := strings.Split(handle, "@")
-	if len(tokens) != 2 {
-		return "", "", fmt.Errorf("error: expected 2 tokens but got %d", len(tokens))
+	if len(tokens) == 3 {
+		return tokens[1], tokens[2], nil
+	} else if len(tokens) == 2 {
+		return tokens[0], tokens[1], nil
+	} else {
+		return "", "", fmt.Errorf("error: expected 2 or 3 tokens but got %d", len(tokens))
 	}
-
-	return tokens[0], tokens[1], nil
 }

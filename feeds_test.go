@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProcessFeedContent(t *testing.T) {
@@ -74,4 +77,26 @@ func TestProcessFeedContent(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseMastodonHandle(t *testing.T) {
+	t.Run("user@server", func(t *testing.T) {
+		assert := assert.New(t)
+		require := require.New(t)
+
+		user, server, err := ParseMastodonHandle("user@server")
+		require.NoError(err)
+		assert.Equal("user", user)
+		assert.Equal("server", server)
+	})
+
+	t.Run("@user@server", func(t *testing.T) {
+		assert := assert.New(t)
+		require := require.New(t)
+
+		user, server, err := ParseMastodonHandle("@user@server")
+		require.NoError(err)
+		assert.Equal("user", user)
+		assert.Equal("server", server)
+	})
 }
