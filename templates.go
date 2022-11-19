@@ -70,8 +70,11 @@ const indexTemplate = `
           and <a href="https://yarn.social">Yarn.social</a> pods.
         </p>
         <p>
-          You may freely create new feeds here by simply dropping a website's URL or any valid RSS/Atom URI.
+          In addition there is also support for Mastodon (<i>which supports RSS feeds for user posts</i>) by entering a Mastodon handle, for example: <code>mastodon://user@domain</code> or <code>mastodon://@user@server</code>
         </p>
+        <p>
+          You may freely create new feeds here by simply dropping a website's URL or any valid RSS/Atom URI.
+          </p>
         <p>
           You are also welcome to subscribe to any of the <a href="/feeds">feeds</a>
           with your favorite <i>twtxt</i> client (<i>I like using
