@@ -14,6 +14,8 @@ steps:
     settings:
       urls:
         - https://msgbus.mills.io/ci.mills.io
+    depends_on:
+      - build-and-test
     when:
       status:
         - success
