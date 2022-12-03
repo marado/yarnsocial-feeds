@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -27,6 +28,17 @@ import (
 var (
 	ErrInvalidImage = errors.New("error: invalid image")
 )
+
+// CleanDesc cleans a piece of text suitable as a "description" (# description = )
+// or a profile's tagline. This is mostly used to cleanup shit data from sources
+// like Mastodon that have `\r\n`(s) in their feed's descriptions :/
+// (we may as well cleanup some other shit too!)
+func CleanDesc(text string) string {
+	text = strings.TrimSpace(text)
+	text = regexp.MustCompile(`\S+ Posts, \S+ Following, \S+ Followers ·`).ReplaceAllString(text, "")
+	text = regexp.MustCompile(`\s+`).ReplaceAllString(text, " ")
+	return text
+}
 
 // CleanTwt cleans a twt's text, replacing new lines with spaces and
 // stripping surrounding spaces.

@@ -280,7 +280,7 @@ func ValidateMastodonFeed(conf *Config, handle string) (Feed, error) {
 		Name:        name,
 		URI:         rssURI,
 		Avatar:      avatar,
-		Description: feed.Description,
+		Description: CleanDesc(feed.Description),
 		Type:        FeedTypeRSS,
 	}, nil
 }

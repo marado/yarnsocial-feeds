@@ -131,6 +131,10 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		app.tasks.DispatchFunc(func() error {
+			return UpdateRSSFeed(app.conf, feed.Name, feed.URI)
+		})
+
 		msg := fmt.Sprintf("Feed successfully added %s: %s", feed.Name, feed.URI)
 		if err := renderMessage(w, http.StatusCreated, "Success", msg); err != nil {
 			log.WithError(err).Error("error rendering message template")

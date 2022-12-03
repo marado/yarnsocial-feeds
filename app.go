@@ -13,11 +13,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/robfig/cron"
 	log "github.com/sirupsen/logrus"
+	"go.mills.io/tasks"
 )
 
 type App struct {
-	conf *Config
-	cron *cron.Cron
+	conf  *Config
+	cron  *cron.Cron
+	tasks *tasks.Dispatcher
 }
 
 func NewApp(options ...Option) (*App, error) {
@@ -37,8 +39,9 @@ func NewApp(options ...Option) (*App, error) {
 	}
 
 	cron := cron.New()
+	tasks := tasks.NewDispatcher(10, 100) // TODO: Make this configurable?
 
-	return &App{conf: conf, cron: cron}, nil
+	return &App{conf: conf, cron: cron, tasks: tasks}, nil
 }
 
 func (app *App) initRoutes() *mux.Router {
@@ -147,8 +150,12 @@ func (app *App) Run() error {
 		log.WithError(err).Error("error setting up background jobs")
 		return err
 	}
+
 	app.cron.Start()
 	log.Info("started background jobs")
+
+	app.tasks.Start()
+	log.Info("started task dispatcher")
 
 	if err := app.setupSignalHandlers(); err != nil {
 		log.WithError(err).Error("error setting up signal handlers")
